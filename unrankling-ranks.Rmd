@@ -1,9 +1,9 @@
 ---
-title: "Statistical tests as linear models"
+title: "Statistical tests as linear models - unrankling ranks"
 output: html_notebook
 ---
 
-```{r}
+```{r, message=FALSE, echo=FALSE}
 library(ggplot2)
 library(tidyr)
 library(dplyr)
@@ -11,22 +11,32 @@ library(broom)
 library(MASS)
 ```
 # The premise
-Jonas Lindeløv wrote a nice blog post explaining how many common statistical tests can be seen as special cases in simple linear regression. This included examples of nonparametric tests based on ranks. I realized in reading this my intuition for what ranks do to data was too limited. So I made some examples to try and better understand.
+Jonas Lindeløv wrote a [nice blog post](https://lindeloev.github.io/tests-as-linear/#3_pearson_and_spearman_correlation) explaining how common statistical tests amount to special cases of linear regression. This is real neat unfication of tests that at first pass look unrelated. His work included examples of nonparametric tests, based on ranks. But he seems to dismiss nonparametric tests as not that different from parametric ones. That seemed off. But I realized that my intuition for what ranks do to datawas too limited to say for sure. So I made some examples here to try and understand ranks better.
 
 
-# Verifcation
+# Verification
 
-First, I just want to try a few examples of parametric tests from Jonas' post to make sure things check out.
+First, I just want to try a couple examples of parametric tests from Jonas' post to make sure things check out.
 
-## Pearsons's
+## Correlation (Pearsons)
 We'll need 20 samples for the equivilance to be exact.
-```{r, message=FALSE, echo=FALSE}
+```{r, message=FALSE, echo=TRUE, fig.width=0.8, fig.height=0.8}
 # Create some data that covaries
 covar <- matrix(c(1, 0.8, 1, 0.8), ncol=2)
 M <- mvrnorm(n = 20, rep(0, 2), Sigma=covar)
 X <- M[,1]
 Y <- M[,2]
 
+
+M %>% 
+  as.data.frame() %>% 
+  ggplot(aes(x=V1, y=V2)) +
+  geom_point() + 
+  theme_classic() +
+  labs(x="X", y="Y")
+```
+
+```{r, message=FALSE, echo=TRUE}
 # Built in Pearons
 a <- cor.test(X,Y)
 at <- tidy(a)
@@ -41,7 +51,7 @@ bt$method <- "lm(y ~ 1 + x)"
 print(full_join(at, bt))
 ```
 
-## t-test
+## _t_-test (one variable)
 We'll need 20 samples for the equivilance to be exact.
 
 ```{r, message=FALSE, echo=FALSE}
@@ -63,9 +73,39 @@ bt$method <- "lm(y ~ 1)"
 print(full_join(at, bt))
 ```
 
+## Paired _t_-test (two variable)
+We'll need 20 samples for the equivilance to be exact.
+
+```{r, message=FALSE, echo=FALSE}
+Y0 <- rnorm(20, mean=0, sd=1)
+Y1 <- rnorm(20, mean=1, sd=1)
+
+# Built-in t-test
+a = t.test(Y1, Y0, paired = TRUE)
+at <- tidy(a)
+at$df = a$parameter
+
+# Equivalent linear model
+b = lm(Y1 - Y0 ~ 1)
+bt <- tidy(b)
+bt$conf.low = confint(b)[1]
+bt$conf.high = confint(b)[2]
+bt$df = b$df.residual
+bt$method <- "lm(y1 - y0 ~ 1)"
+
+print(full_join(at, bt))
+```
+
+Now let's try their nonparametric equivilants.
+
+HERE
 
 
 # Ranks 
+What does ranking do to data? 
+
+To find out let's first try some different noise distributions, then some outliers, and finally some linear and nonlinear series.
+
 ## Gaussian noise
 
 ## Non-gaussian noise
