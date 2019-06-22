@@ -1,0 +1,77 @@
+---
+title: "Statistical tests as linear models"
+output: html_notebook
+---
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(broom)
+library(MASS)
+```
+# The premise
+Jonas Lindeløv wrote a nice blog post explaining how many common statistical tests can be seen as special cases in simple linear regression. This included examples of nonparametric tests based on ranks. I realized in reading this my intuition for what ranks do to data was too limited. So I made some examples to try and better understand.
+
+
+# Verifcation
+
+First, I just want to try a few examples of parametric tests from Jonas' post to make sure things check out.
+
+## Pearsons's
+We'll need 20 samples for the equivilance to be exact.
+```{r, message=FALSE, echo=FALSE}
+# Create some data that covaries
+covar <- matrix(c(1, 0.8, 1, 0.8), ncol=2)
+M <- mvrnorm(n = 20, rep(0, 2), Sigma=covar)
+X <- M[,1]
+Y <- M[,2]
+
+# Built in Pearons
+a <- cor.test(X,Y)
+at <- tidy(a)
+
+# Equivalent linear model
+b <- lm(Y ~ 1 + X)
+bt = tidy(b)[2, ]  # Only slope
+bt$conf.low = confint(b)[2,1]
+bt$conf.high = confint(b)[2,2]
+bt$method <- "lm(y ~ 1 + x)"
+
+print(full_join(at, bt))
+```
+
+## t-test
+We'll need 20 samples for the equivilance to be exact.
+
+```{r, message=FALSE, echo=FALSE}
+Y1 <- rnorm(50, mean=1, sd=1)
+
+# Built-in t-test
+a = t.test(Y1)
+at <- tidy(a)
+at$df = a$parameter
+
+# Equivalent linear model
+b = lm(Y1 ~ 1)
+bt <- tidy(b)
+bt$conf.low = confint(b)[1]
+bt$conf.high = confint(b)[2]
+bt$df = b$df.residual
+bt$method <- "lm(y ~ 1)"
+
+print(full_join(at, bt))
+```
+
+
+
+# Ranks 
+## Gaussian noise
+
+## Non-gaussian noise
+
+## OMG Outliers
+
+## Linear data
+
+## Nonlinear data
